@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+.git/
+.claude/
+android/
+ios/
+dist/
+dist-ios/
+coverage/
+*.log
+.env*
+*.p8
+*.p12
+*.keystore
+*.jks

@@ -1,0 +1,47 @@
+# Dependencies and generated output
+**/node_modules/
+**/.expo/
+**/dist/
+**/dist-ios/
+**/web-build/
+**/coverage/
+mobile/android/
+mobile/ios/
+**/.kotlin/
+**/*.tsbuildinfo
+**/expo-env.d.ts
+
+# Machine-local tools and preserved repository metadata
+.local-backup/
+**/.claude/
+**/.agents/
+**/.codex/
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+**/*.log
+
+# Credentials and local environment
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/*.p8
+**/*.p12
+**/*.jks
+**/*.keystore
+**/*.mobileprovision
+**/google-services.json
+**/GoogleService-Info.plist
+**/service-account*.json
+**/credentials.json
+
+# Local handoff artifacts and internal planning notes
+release/*.zip
+release/*.sha256
+release/native-config-summary.json
+release/dev-qr.*
+docs/BUILD-PLAN.md
+docs/RELEASE-PLAN.md
+docs/home-preview.png

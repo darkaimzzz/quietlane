@@ -1,0 +1,24 @@
+{
+  "name": "Quietlane",
+  "version": "1.0.0",
+  "supportEmail": "nishaadbharaswadkar@gmail.com",
+  "ios": {
+    "title": "Quietlane: Less Scroll",
+    "subtitle": "Focus, sleep & browse calmly",
+    "category": "Productivity",
+    "keywords": "focus,screentime,shorts,reels,habits,browser,sleep,productivity",
+    "promotionalText": "Keep your attention. Use focus and sleep tools without creating an account, and browse social websites with fewer distractions."
+  },
+  "android": {
+    "title": "Quietlane: Less Scroll",
+    "shortDescription": "Account-free focus tools and a calmer way to browse social websites.",
+    "category": "PRODUCTIVITY"
+  },
+  "description": "Keep your attention without giving up your connections.\n\nQuietlane combines local focus and sleep tools with a filtered social browser. No Quietlane account, registration, or subscription is required.\n\nFOCUS ON PURPOSE\nChoose a 15, 25, 45, or 60-minute focus session. During the session, social browsing inside Quietlane pauses so you can give one thing your attention.\n\nMAKE ROOM FOR REST\nSet a repeating sleep schedule, choose its starting weekdays, and keep social browsing inside Quietlane quiet overnight.\n\nBROWSE WITH FEWER DISTRACTIONS\nOpen supported social websites with per-platform controls for known short-form feeds, discovery routes, home feed containers, visible ad surfaces, or YouTube recommendations. Available controls vary by platform. Messages and profiles remain accessible where the platform's web experience supports them.\n\nSHARE WITH INTENTION\nPost Mode temporarily pauses content filters for a timed visit to one platform inside Quietlane. Focus, sleep, and daily limits continue to apply. Shared video links can open a specific clip without opening its endless feed.\n\nKEEP YOUR SETTINGS LOCAL\nSee measured time spent inside Quietlane, set platform limits, export local preferences/activity, and reset them when you choose. Quietlane has no analytics SDK or account backend.\n\nPLEASE KNOW\nQuietlane filters only its own browser. It does not block other installed apps or provide device-wide Screen Time enforcement. Social platforms may require their own sign-in for private content and may restrict embedded browsers or particular web features. Filtering is best effort and may change when websites change. Live camera/microphone capture is disabled.\n\nIndependent product. Not affiliated with the social platforms it opens.",
+  "reviewNotes": "No Quietlane account or reviewer login is required. On a fresh install, select Get started. The Home, Focus, Sleep, Apps, Settings and bundled Privacy screens are immediately available. Focus timers and schedule controls can be tested without signing in to any social platform. Social-service sign-in, if desired, happens directly on that service's website; no app credentials or app backend exist. Do not use an operator's personal social account for review. Quietlane is not a native-app blocker.",
+  "releaseStatus": "local-release-candidate; native signing, device checks, hosted URLs and store review pending",
+  "publicPaths": {
+    "privacy": "/privacy-policy.html",
+    "support": "/support.html"
+  }
+}
