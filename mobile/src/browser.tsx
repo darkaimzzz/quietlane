@@ -17,6 +17,8 @@ export default function Browser(p:BrowserProps){
  const [back,setBack]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
+ const [pageDetails,setPageDetails]=useState('Waiting for document…');
+ const [frameDetails,setFrameDetails]=useState('');
  const [url,setUrl]=useState(p.url);
  const [sourceUrl,setSourceUrl]=useState(p.url);
  const [shared,setShared]=useState(p.shared);
@@ -26,7 +28,7 @@ export default function Browser(p:BrowserProps){
  const lastBlock=useRef(0);
  const login='https://www.instagram.com/accounts/login/?next=%2Fdirect%2Finbox%2F';
  const navigate=(next:string,clip?:string)=>{
-  setError('');setLoading(true);setShared(clip);setUrl(next);setSourceUrl(next);setAttempt(v=>v+1);
+  setError('');setPageDetails('Waiting for document…');setLoading(true);setShared(clip);setUrl(next);setSourceUrl(next);setAttempt(v=>v+1);
  };
  const block=()=>{if(Date.now()-lastBlock.current>1000){lastBlock.current=Date.now();p.onBlock();}};
  useEffect(()=>{
@@ -67,6 +69,7 @@ export default function Browser(p:BrowserProps){
    </Pressable>}
    <BrowserButton name="share-outline" onPress={()=>{Share.share({message:url}).catch(()=>setError('Could not share this page.'));}} label="Share current page"/>
   </View>
+  {__DEV__&&<Text selectable style={{color:'#A0A2AC',fontSize:11,paddingHorizontal:12,paddingVertical:4}}>{frameDetails+pageDetails}</Text>}
   {loading&&!error&&<View style={{padding:12,flexDirection:'row',justifyContent:'center',gap:10}}>
    <ActivityIndicator color="#B8E7CE"/><Text style={{color:'#A0A2AC'}}>Connecting to {site.name}…</Text>
   </View>}
@@ -79,6 +82,7 @@ export default function Browser(p:BrowserProps){
   </View>:
   <WebView<unknown> key={String(p.post)+(shared||'')+attempt} ref={ref} source={source}
    style={{flex:1,backgroundColor:'#FFFFFF'}} containerStyle={{flex:1}} originWhitelist={['*']}
+   onLayout={e=>{if(__DEV__)setFrameDetails('Frame: '+Math.round(e.nativeEvent.layout.width)+'×'+Math.round(e.nativeEvent.layout.height)+' · ');}}
    onShouldStartLoadWithRequest={r=>allow(r.url,r.isTopFrame)}
    onNavigationStateChange={n=>{
     if(!n.url||n.url==='about:blank')return;
@@ -92,11 +96,19 @@ export default function Browser(p:BrowserProps){
     if(e.nativeEvent.data.length>4096)return;
     try{
      const msg=JSON.parse(e.nativeEvent.data);
+     if(__DEV__&&msg.type==='quietlane:render'&&[msg.width,msg.height,msg.elements,msg.inputs].every(n=>Number.isInteger(n)&&n>=0&&n<=10000000)){
+      setPageDetails('Page: '+msg.width+'×'+msg.height+' · '+msg.elements+' elements · '+msg.inputs+' fields');
+     }
      if(msg.type==='blocked')block();
      if(msg.type==='shared'&&typeof msg.url==='string'&&sharedFromMessages(url,msg.url,p.id))navigate(msg.url,msg.url);
     }catch{}
    }}
-   onLoadStart={e=>{if(e.nativeEvent.url&&e.nativeEvent.url!=='about:blank')setLoading(true);}} onLoadEnd={e=>{if(e.nativeEvent.url&&e.nativeEvent.url!=='about:blank')setLoading(false);}}
+   onLoadStart={e=>{if(e.nativeEvent.url&&e.nativeEvent.url!=='about:blank'){setLoading(true);setPageDetails('Loading document…');}}}
+   onLoadEnd={e=>{
+    if(!e.nativeEvent.url||e.nativeEvent.url==='about:blank')return;
+    setLoading(false);setPageDetails('Document loaded; checking layout…');
+    if(__DEV__)ref.current?.injectJavaScript('(function(){const report=()=>window.ReactNativeWebView.postMessage(JSON.stringify({type:"quietlane:render",width:Math.round(innerWidth),height:Math.round(innerHeight),elements:document.body?document.body.querySelectorAll("*").length:0,inputs:document.querySelectorAll("input").length}));report();setTimeout(report,3000);setTimeout(report,10000);})();true;');
+   }}
    onError={e=>setError(e.nativeEvent.description)}
    onHttpError={e=>{if(e.nativeEvent.statusCode>=400)setError('The platform returned an error ('+e.nativeEvent.statusCode+'). Try again or use the sign-in page.');}}
    javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled allowsInlineMediaPlayback allowsPictureInPictureMediaPlayback

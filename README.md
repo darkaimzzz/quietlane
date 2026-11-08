@@ -33,6 +33,8 @@ Protection applies **inside Quietlane only**. This project does not implement na
 
 Third-party sign-in, DOM filtering, uploads, and playback depend on each platform's web experience and need native-device validation. This is a release candidate, not a signed or published store release.
 
+Known issue: Instagram can remain blank in the iPhone embedded browser even when Safari works. Its cause is under investigation; development builds show rendering dimensions/counts to help reproduce it. Instagram support is not release-verified.
+
 ## Development checks
 
 Run inside `mobile/`:

@@ -13,7 +13,7 @@ function loadBrowser(){
  const exports:any={};
  const WebView=React.forwardRef((props:any,ref)=>{React.useImperativeHandle(ref,()=>({stopLoading(){},goBack(){},reload(){}}));return React.createElement('WebView',props);});
  const modules:Record<string,unknown>={'react':React,'react/jsx-runtime':JSX,'react-native':{View:'View',Text:'Text',Pressable:'Pressable',ActivityIndicator:'ActivityIndicator',BackHandler:{addEventListener:()=>({remove(){}})},Alert:{alert(){}},Linking:{openURL:async()=>{}},Share:{share:async()=>{}}},'react-native-webview':{WebView},'@expo/vector-icons':{Ionicons:'Icon'},'./engine':engine};
- vm.runInNewContext(output,{exports,require:(id:string)=>{assert.ok(id in modules,'Unexpected module '+id);return modules[id];},URL,setTimeout,clearTimeout,console});
+ vm.runInNewContext(output,{exports,require:(id:string)=>{assert.ok(id in modules,'Unexpected module '+id);return modules[id];},URL,setTimeout,clearTimeout,console,__DEV__:true});
  return exports.default;
 }
 const props={id:'instagram',url:'https://www.instagram.com/direct/inbox/',rules:engine.defaults.rules,post:false,remaining:'',onClose(){},onBlock(){}};
@@ -73,5 +73,17 @@ test('blank-document load callbacks cannot cancel the stalled-page timeout',asyn
  await act(async()=>tree.root.findByType('WebView').props.onLoadEnd({nativeEvent:{url:'about:blank'}}));
  await act(async()=>t.mock.timers.tick(25000));
  assert.ok(JSON.stringify(tree.toJSON()).includes('taking too long'));
+ }finally{await act(async()=>tree.unmount());}
+});
+
+test('development loading details report only validated rendering counts',async()=>{
+ const Browser=loadBrowser();let tree:any;
+ await act(async()=>{tree=create(React.createElement(Browser,props));});
+ try{
+ const onMessage=tree.root.findByType('WebView').props.onMessage;
+ await act(async()=>onMessage({nativeEvent:{data:JSON.stringify({type:'quietlane:render',width:390,height:700,elements:123,inputs:2})}}));
+ assert.ok(JSON.stringify(tree.toJSON()).includes('Page: 390×700 · 123 elements · 2 fields'));
+ await act(async()=>onMessage({nativeEvent:{data:JSON.stringify({type:'quietlane:render',width:'private text',height:700,elements:123,inputs:2})}}));
+ assert.ok(!JSON.stringify(tree.toJSON()).includes('private text'));
  }finally{await act(async()=>tree.unmount());}
 });
