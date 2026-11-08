@@ -1,3 +1,4 @@
+import {browserGuardSources} from './browser-guards.generated.ts';
 export type Rules = {shorts:boolean;explore:boolean;feed:boolean;ads:boolean;suggestions:boolean};
 export const platforms = [
  {id:'instagram',name:'Instagram',icon:'logo-instagram',color:'#EC779F',domain:'instagram.com',home:'https://www.instagram.com/',messages:'https://www.instagram.com/direct/inbox/',note:'Reels & Explore'},
@@ -29,6 +30,7 @@ export function blockedRoute(url:string,id:PlatformId,rules:Rules,shared?:string
  try {
  const u=new URL(url);const path=decodeURIComponent(u.pathname).replace(/\/+/g,'/').toLowerCase();
  if(shared) { const s=new URL(shared); if(u.origin===s.origin&&u.pathname===s.pathname&&(id==='youtube'?/^\/shorts\/[\w-]+\/?$/:id==='instagram'?/^\/reels?\/[\w-]+\/?$/:id==='facebook'?/^\/reel\/[\w-]+\/?$/:/a^/).test(u.pathname)) return false; }
+ if(id==='instagram'&&rules.feed&&path==='/')return true;
  if(rules.shorts && (
  (id==='instagram'&&/^\/reels?(\/|$)/.test(path)) ||
  (id==='youtube'&&/^\/shorts(\/|$)/.test(path)) ||
@@ -73,7 +75,7 @@ export function restore(raw:string|null):State {
  return {onboarded:v.onboarded===true,apps,sleep:{enabled:v.sleep?.enabled===true,start:validTime(v.sleep?.start)?v.sleep.start:'22:00',end:validTime(v.sleep?.end)?v.sleep.end:'07:00',days:Array.isArray(v.sleep?.days)?[...new Set<number>(v.sleep.days.filter((d:any)=>Number.isInteger(d)&&d>=0&&d<=6))]:[0,1,2,3,4,5,6]},focusUntil:finite(v.focusUntil)?v.focusUntil:0,postUntil:finite(v.postUntil)?v.postUntil:0,postApp:validId(v.postApp)?v.postApp:null,usage,blocked:finite(v.blocked)?v.blocked:0,focusCompleted:finite(v.focusCompleted)?v.focusCompleted:0,autoApp:validId(v.autoApp)?v.autoApp:null,messagesFirst:v.messagesFirst===true};
 }
 // shortcut: platform DOM selectors change, refresh rules after live-device checks when sites change.
-export function injection(id:PlatformId,rules:Rules,shared?:string):string {
+export function injection(id:PlatformId,rules:Rules,shared?:string,token?:string):string {
  const selectors:string[]=[];
  if(rules.shorts)selectors.push(...({
  instagram:['a[href="/reels/"]','a[href="/reels"]'],
@@ -87,17 +89,17 @@ export function injection(id:PlatformId,rules:Rules,shared?:string):string {
  if(rules.suggestions&&id==='youtube')selectors.push('#related','ytm-watch-next-secondary-results-renderer');
  if(shared){ const index=selectors.indexOf('yt-shorts');if(index>=0)selectors.splice(index,1); }
  if(shared)selectors.push('[aria-label="Next reel"]','[aria-label="Next video"]','[aria-label="Previous reel"]','[aria-label="Previous video"]');
- return '(function(){const c='+JSON.stringify({id,rules,shared})+';const sharedFromMessages='+sharedFromMessages.toString()+';const guard='+blockedRoute.toString()+';'+
+ return '(function(){const c='+JSON.stringify({id,rules,shared})+';const sharedFromMessages='+browserGuardSources.sharedFromMessages+';const guard='+browserGuardSources.blockedRoute+';'+
  'const host=new URL(location.href).hostname;const domain='+JSON.stringify(platforms.find(p=>p.id===id)!.domain)+';if(host!==domain&&!host.endsWith("."+domain))return;'+
  'if(typeof window.__quietlaneCleanup==="function")window.__quietlaneCleanup();'+
- 'const send=(type,url)=>window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type,url}));'+
+ 'const send=(type,url)=>window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type,url,config:JSON.stringify(c),token:'+JSON.stringify(token)+'}));'+
  'const safe=()=>{if(guard(location.href,c.id,c.rules,c.shared)){location.replace('+JSON.stringify(platforms.find(p=>p.id===id)!.messages)+');send("blocked");return false;}return true;};'+
  'let style=document.getElementById("quietlane-style");if(!style){style=document.createElement("style");style.id="quietlane-style";(document.head||document.documentElement).appendChild(style);}style.textContent='+JSON.stringify(selectors.length?selectors.join(',')+'{display:none!important;}':'')+';'+
  'const click=e=>{const a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a&&guard(a.href,c.id,c.rules,c.shared)){e.preventDefault();e.stopImmediatePropagation();if(sharedFromMessages(location.href,a.href,c.id))send("shared",a.href);else send("blocked");}};'+
  'document.addEventListener("click",click,true);const originals={};const wrappers={};'+
  'for(const method of ["pushState","replaceState"]){originals[method]=history[method];wrappers[method]=function(...args){if(args[2]&&guard(new URL(args[2],location.href).href,c.id,c.rules,c.shared)){send("blocked");return;}const result=originals[method].apply(this,args);safe();return result;};history[method]=wrappers[method];}'+
  'window.addEventListener("popstate",safe);let pending;const observer=new MutationObserver(()=>{if(!pending)pending=setTimeout(()=>{pending=undefined;safe();},100);});observer.observe(document.documentElement,{childList:true,subtree:true});'+
- 'window.__quietlaneCleanup=()=>{document.removeEventListener("click",click,true);window.removeEventListener("popstate",safe);observer.disconnect();if(pending)clearTimeout(pending);for(const method of ["pushState","replaceState"])if(history[method]===wrappers[method])history[method]=originals[method];};safe();})();true;';
+ 'window.__quietlaneCleanup=()=>{document.removeEventListener("click",click,true);window.removeEventListener("popstate",safe);observer.disconnect();if(pending)clearTimeout(pending);for(const method of ["pushState","replaceState"])if(history[method]===wrappers[method])history[method]=originals[method];};if(safe())send("ready");})();true;';
 }
 
 

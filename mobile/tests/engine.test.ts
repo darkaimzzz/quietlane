@@ -1,3 +1,4 @@
+import {browserGuardSources} from '../src/browser-guards.generated.ts';
 import vm from 'node:vm';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -97,7 +98,7 @@ test('filter injection executes after production-style function minification',as
  const fs=await import('node:fs');const ts=await import('typescript');const {minify}=await import('terser');
  const compiled=ts.transpileModule(fs.readFileSync(new URL('../src/engine.ts',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
  const result=await minify(compiled,{mangle:{toplevel:true},compress:false});
- const exports:any={};vm.runInNewContext(result.code!,{exports,URL});let redirected=false;
+ const exports:any={};vm.runInNewContext(result.code!,{exports,URL,require:(id:string)=>{assert.equal(id,'./browser-guards.generated.ts');return {browserGuardSources};}});let redirected=false;
  const link='https://m.youtube.com/shorts/AbC';
  const style={textContent:''};const document={getElementById:()=>style,addEventListener:()=>{},documentElement:{}};
  assert.doesNotThrow(()=>vm.runInNewContext(exports.injection('youtube',defaults.rules,link),{window:{addEventListener:()=>{}},document,location:{href:link,replace:()=>{redirected=true;}},history:{pushState:()=>{},replaceState:()=>{}},URL,MutationObserver:class{observe(){}},setTimeout}));assert.equal(redirected,false);
@@ -131,4 +132,40 @@ test('re-injecting filters removes old listeners so disabled rules stay disabled
  vm.runInContext(injection('youtube',{...defaults.rules,shorts:false}),context);
  for(const fn of events.click)fn({target:{closest:()=>({href:'https://m.youtube.com/shorts/xyz'})},preventDefault(){prevented=true;},stopImmediatePropagation(){}});
  assert.equal(prevented,false);assert.equal(events.click.length,1);
+});
+
+test('filter generation works when Hermes hides function source as bytecode',()=>{
+ const guardString=blockedRoute.toString,sharedString=sharedFromMessages.toString;
+ try{
+ blockedRoute.toString=()=> 'function blockedRoute(a0, a1, a2, a3) { [bytecode] }';
+ sharedFromMessages.toString=()=> 'function sharedFromMessages(a0, a1, a2) { [bytecode] }';
+ const js=injection('instagram',defaults.rules);
+ const style={textContent:''},location={href:'https://www.instagram.com/accounts/login/',replace(){}};
+ const document={getElementById:()=>style,addEventListener(){},documentElement:{}};
+ const history={pushState(){},replaceState(){}};
+ assert.doesNotThrow(()=>vm.runInNewContext(js,{window:{addEventListener(){}},document,location,history,URL,MutationObserver:class{observe(){}},setTimeout}));
+ }finally{blockedRoute.toString=guardString;sharedFromMessages.toString=sharedString;}
+});
+
+test('Instagram home-feed guard blocks home without blocking sign-in, profiles or messages',()=>{
+ const rules={...defaults.rules,feed:true};
+ assert.equal(blockedRoute('https://www.instagram.com/','instagram',rules),true);
+ for(const path of ['/accounts/login/','/direct/inbox/','/some_profile/','/p/AbC/']){
+  assert.equal(blockedRoute('https://www.instagram.com'+path,'instagram',rules),false);
+ }
+ assert.equal(blockedRoute('https://www.instagram.com/','instagram',{...rules,feed:false}),false);
+});
+
+test('injected filter acknowledges its exact configuration only after successful startup',()=>{
+ const messages:any[]=[];
+ const style={textContent:''},location={href:'https://www.instagram.com/accounts/login/',replace(){}};
+ const document={getElementById:()=>style,addEventListener(){},documentElement:{}};
+ const history={pushState(){},replaceState(){}};
+ vm.runInNewContext(injection('instagram',defaults.rules),{
+  window:{addEventListener(){},ReactNativeWebView:{postMessage(data:string){messages.push(JSON.parse(data));}}},
+  document,location,history,URL,MutationObserver:class{observe(){}},setTimeout,
+ });
+ const ready=messages.find(message=>message.type==='ready');
+ assert.ok(ready);
+ assert.equal(ready.config,JSON.stringify({id:'instagram',rules:defaults.rules}));
 });

@@ -2,7 +2,7 @@ import React,{useRef,useState,useEffect,useMemo} from 'react';
 import {View,Text,Pressable,ActivityIndicator,Alert,Linking,Share,BackHandler} from 'react-native';
 import {WebView} from 'react-native-webview';
 import {Ionicons} from '@expo/vector-icons';
-import {platforms,PlatformId,Rules,isSafeUrl,blockedRoute,injection,sharedFromMessages} from './engine';
+import {platforms,PlatformId,Rules,isSafeUrl,blockedRoute,injection,sharedFromMessages,availableRules} from './engine';
 
 export type BrowserProps={id:PlatformId;url:string;shared?:string;rules:Rules;post:boolean;remaining:string;onClose:()=>void;onBlock:()=>void};
 function BrowserButton({name,onPress,label,disabled=false}:{name:React.ComponentProps<typeof Ionicons>['name'];onPress:()=>void;label:string;disabled?:boolean}){
@@ -17,18 +17,28 @@ export default function Browser(p:BrowserProps){
  const [back,setBack]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
- const [pageDetails,setPageDetails]=useState('Waiting for document…');
- const [frameDetails,setFrameDetails]=useState('');
  const [url,setUrl]=useState(p.url);
  const [sourceUrl,setSourceUrl]=useState(p.url);
  const [shared,setShared]=useState(p.shared);
  const [attempt,setAttempt]=useState(0);
+ const configKey=JSON.stringify({id:p.id,rules:p.rules,shared});
+ const modeKey=String(p.post)+configKey;
+ const [filterState,setFilterState]=useState({key:modeKey,revision:0,active:false});
+ if(filterState.key!==modeKey)setFilterState({key:modeKey,revision:filterState.revision+1,active:false});
+ const [failedKey,setFailedKey]=useState('');
+ const filterKey=JSON.stringify([modeKey,filterState.revision]);
+ const filterScript=p.post?'true;':injection(p.id,p.rules,shared,filterKey);
+ const filterCount=availableRules[p.id].filter(key=>p.rules[key]).length;
+ const filtersApplied=filterState.key===modeKey&&filterState.active;
+ const filtersFailed=failedKey===filterKey&&!filtersApplied&&!loading&&!p.post;
  // Native navigation events report redirects before the new document has committed.
  const source=useMemo(()=>({uri:sourceUrl}),[sourceUrl]);
  const lastBlock=useRef(0);
  const login='https://www.instagram.com/accounts/login/?next=%2Fdirect%2Finbox%2F';
+ const resetFilters=()=>{setFilterState(value=>({...value,revision:value.revision+1,active:false}));setFailedKey('');};
  const navigate=(next:string,clip?:string)=>{
-  setError('');setPageDetails('Waiting for document…');setLoading(true);setShared(clip);setUrl(next);setSourceUrl(next);setAttempt(v=>v+1);
+  resetFilters();
+  setError('');setLoading(true);setShared(clip);setUrl(next);setSourceUrl(next);setAttempt(v=>v+1);
  };
  const block=()=>{if(Date.now()-lastBlock.current>1000){lastBlock.current=Date.now();p.onBlock();}};
  useEffect(()=>{
@@ -40,6 +50,14 @@ export default function Browser(p:BrowserProps){
   const sub=BackHandler.addEventListener('hardwareBackPress',()=>{if(back)ref.current?.goBack();else onClose();return true;});
   return()=>sub.remove();
  },[back,onClose]);
+ useEffect(()=>{
+  if(!p.post&&!loading)ref.current?.injectJavaScript(filterScript);
+ },[filterScript,p.post,loading]);
+ useEffect(()=>{
+  if(p.post||!filterCount||filtersApplied||loading)return;
+  const timer=setTimeout(()=>setFailedKey(filterKey),5000);
+  return()=>clearTimeout(timer);
+ },[p.post,filterCount,filtersApplied,loading,filterKey]);
  const external=(next:string)=>{
   try{const u=new URL(next);if(u.protocol!=='https:'||u.username||u.password)return;}catch{return;}
   Alert.alert('Leave protected browsing?','This link opens outside Quietlane. Content filtering will not apply.',[
@@ -62,14 +80,19 @@ export default function Browser(p:BrowserProps){
    <BrowserButton name="close" onPress={onClose} label="Close browser"/>
    <View style={{flex:1}}>
     <Text style={{color:'white',fontSize:17,fontWeight:'600'}}>{site.name}</Text>
-    <Text style={{color:p.post?'#F3DE76':'#A8D8B9',fontSize:12}}>{p.post?'Post Mode · '+p.remaining:'Protected browsing'}</Text>
+    <Text style={{color:p.post?'#F3DE76':filtersApplied&&filterCount?'#A8D8B9':'#A0A2AC',fontSize:12}}>{p.post?'Post Mode · '+p.remaining:!filterCount?'No filters enabled':filtersApplied?filterCount+' filters active':'Applying '+filterCount+' filters…'}</Text>
    </View>
    {p.id==='instagram'&&<Pressable accessibilityRole="button" accessibilityLabel="Open Instagram sign-in" onPress={()=>navigate(login)} style={{padding:10}}>
     <Text style={{color:'#B8E7CE',fontWeight:'600'}}>Sign in</Text>
    </Pressable>}
    <BrowserButton name="share-outline" onPress={()=>{Share.share({message:url}).catch(()=>setError('Could not share this page.'));}} label="Share current page"/>
   </View>
-  {__DEV__&&<Text selectable style={{color:'#A0A2AC',fontSize:11,paddingHorizontal:12,paddingVertical:4}}>{frameDetails+pageDetails}</Text>}
+  {filtersFailed&&!error&&<View style={{padding:12,gap:8,backgroundColor:'#332C1D'}}>
+   <Text style={{color:'#F3DE76'}}>Filters have not started. This page is not filtered yet.</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel="Retry content filters" onPress={()=>ref.current?.injectJavaScript(filterScript)}>
+    <Text style={{color:'#B8E7CE'}}>Retry filters</Text>
+   </Pressable>
+  </View>}
   {loading&&!error&&<View style={{padding:12,flexDirection:'row',justifyContent:'center',gap:10}}>
    <ActivityIndicator color="#B8E7CE"/><Text style={{color:'#A0A2AC'}}>Connecting to {site.name}…</Text>
   </View>}
@@ -82,7 +105,6 @@ export default function Browser(p:BrowserProps){
   </View>:
   <WebView<unknown> key={String(p.post)+(shared||'')+attempt} ref={ref} source={source}
    style={{flex:1,backgroundColor:'#FFFFFF'}} containerStyle={{flex:1}} originWhitelist={['*']}
-   onLayout={e=>{if(__DEV__)setFrameDetails('Frame: '+Math.round(e.nativeEvent.layout.width)+'×'+Math.round(e.nativeEvent.layout.height)+' · ');}}
    onShouldStartLoadWithRequest={r=>allow(r.url,r.isTopFrame)}
    onNavigationStateChange={n=>{
     if(!n.url||n.url==='about:blank')return;
@@ -91,24 +113,17 @@ export default function Browser(p:BrowserProps){
     if(!p.post&&blockedRoute(n.url,p.id,p.rules,shared)){ref.current?.stopLoading();block();navigate(site.messages);return;}
     setUrl(n.url);
    }}
-   injectedJavaScriptForMainFrameOnly injectedJavaScript={p.post?'true;':injection(p.id,p.rules,shared)}
+   injectedJavaScriptForMainFrameOnly injectedJavaScript={filterScript}
    onMessage={e=>{
     if(e.nativeEvent.data.length>4096)return;
     try{
      const msg=JSON.parse(e.nativeEvent.data);
-     if(__DEV__&&msg.type==='quietlane:render'&&[msg.width,msg.height,msg.elements,msg.inputs].every(n=>Number.isInteger(n)&&n>=0&&n<=10000000)){
-      setPageDetails('Page: '+msg.width+'×'+msg.height+' · '+msg.elements+' elements · '+msg.inputs+' fields');
-     }
+     if(msg.type==='ready'&&msg.config===configKey&&msg.token===filterKey)setFilterState(value=>value.key===modeKey&&value.revision===filterState.revision?{...value,active:true}:value);
      if(msg.type==='blocked')block();
      if(msg.type==='shared'&&typeof msg.url==='string'&&sharedFromMessages(url,msg.url,p.id))navigate(msg.url,msg.url);
     }catch{}
    }}
-   onLoadStart={e=>{if(e.nativeEvent.url&&e.nativeEvent.url!=='about:blank'){setLoading(true);setPageDetails('Loading document…');}}}
-   onLoadEnd={e=>{
-    if(!e.nativeEvent.url||e.nativeEvent.url==='about:blank')return;
-    setLoading(false);setPageDetails('Document loaded; checking layout…');
-    if(__DEV__)ref.current?.injectJavaScript('(function(){const report=()=>window.ReactNativeWebView.postMessage(JSON.stringify({type:"quietlane:render",width:Math.round(innerWidth),height:Math.round(innerHeight),elements:document.body?document.body.querySelectorAll("*").length:0,inputs:document.querySelectorAll("input").length}));report();setTimeout(report,3000);setTimeout(report,10000);})();true;');
-   }}
+   onLoadStart={e=>{if(e.nativeEvent.url&&e.nativeEvent.url!=='about:blank'){setLoading(true);resetFilters();}}} onLoadEnd={e=>{if(e.nativeEvent.url&&e.nativeEvent.url!=='about:blank'){setLoading(false);}}}
    onError={e=>setError(e.nativeEvent.description)}
    onHttpError={e=>{if(e.nativeEvent.statusCode>=400)setError('The platform returned an error ('+e.nativeEvent.statusCode+'). Try again or use the sign-in page.');}}
    javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled allowsInlineMediaPlayback allowsPictureInPictureMediaPlayback

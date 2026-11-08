@@ -25,7 +25,7 @@ Scan the QR code in Expo Go on the same Wi-Fi as your computer. Browser preview:
 - Eight social website launchers with platform-specific filtering controls.
 - Known short-form/discovery route guards, selected feed/ad containers, and YouTube recommendation filtering.
 - Exact shared-clip access, timed Post Mode, optional messages-first launching, local usage budgets, and up to 90 days of in-app activity.
-- Browser navigation, sharing, loading timeout/retry, Instagram sign-in recovery, and external-link confirmation.
+- Browser navigation, sharing, loading timeout/retry, Instagram sign-in recovery, acknowledged filter startup/retry, and external-link confirmation.
 - Local preference/activity export and reset, bundled privacy information, and email support.
 - Expo Router navigation, native/web controls, safe areas, and error fallbacks.
 
@@ -33,7 +33,7 @@ Protection applies **inside Quietlane only**. This project does not implement na
 
 Third-party sign-in, DOM filtering, uploads, and playback depend on each platform's web experience and need native-device validation. This is a release candidate, not a signed or published store release.
 
-Known issue: Instagram can remain blank in the iPhone embedded browser even when Safari works. Its cause is under investigation; development builds show rendering dimensions/counts to help reproduce it. Instagram support is not release-verified.
+Instagram rendering, its sign-in form, Reels/Explore/Home blocking, and continued message access were confirmed by the user on an iPhone. Other platforms, uploads, playback, and complete authenticated flows still need device testing.
 
 ## Development checks
 
@@ -45,6 +45,8 @@ npx expo-doctor
 npm audit
 npx expo export --platform all
 ```
+
+If you change `blockedRoute` or `sharedFromMessages` in `engine.ts`, run `npm run generate:browser-guards` and commit the generated file. Tests reject stale guard source; device builds must not serialize functions with `.toString()`.
 
 The optional [CI template](ci/github-actions.yml) runs type checks, lint, tests, SDK checks, dependency audit, and exports when installed in .github/workflows/. Enabling it requires GitHub workflow permission; it is not active by default. Native signing/device tests are separate.
 
