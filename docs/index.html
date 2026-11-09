@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Quietlane is an open-source app for focused social browsing, focus sessions, and sleep routines. Explore the app and download the source.">
+  <meta name="theme-color" content="#f3f5ed">
+  <meta property="og:title" content="Quietlane — Stay connected. Skip the scroll.">
+  <meta property="og:description" content="An open-source social browser with feed filters, focus timers, and sleep schedules.">
+  <title>Quietlane — Stay connected. Skip the scroll.</title>
+  <link rel="icon" href="./showcase/brand.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./showcase/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="bar wrap">
+    <a class="wordmark" href="./" aria-label="Quietlane home"><img src="./showcase/brand.svg" width="36" height="36" alt="">Quietlane</a>
+    <nav aria-label="Main navigation">
+      <a class="nav-detail" href="#features">Features</a>
+      <a href="https://github.com/darkaimzzz/quietlane">GitHub ↗</a>
+      <a class="nav-download" href="#download">Download ↓</a>
+    </nav>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="headline">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot"></span> OPEN SOURCE · IOS &amp; ANDROID</p>
+        <h1 id="headline">Stay connected.<br><em>Skip the scroll.</em></h1>
+        <p class="intro">Quietlane gives you a place to check messages and open the links friends send, with filters for distracting feeds and time limits you control.</p>
+        <div class="actions">
+          <a class="button primary" href="#download">Get Quietlane <span aria-hidden="true">↓</span></a>
+          <a class="text-link" href="#features">Explore features <span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="fine">No Quietlane account needed.</p>
+      </div>
+      <figure class="showcase">
+        <div class="device-field">
+          <span class="field-label">QUIETLANE / APP PREVIEW</span>
+          <img class="phone phone-back" src="./showcase/focus.png" width="390" height="844" alt="Quietlane focus screen with a 25-minute timer">
+          <img class="phone phone-front" src="./showcase/home.png" width="390" height="844" alt="Quietlane home screen with social shortcuts and time spent in the app">
+        </div>
+        <figcaption><span>01 / HOME</span><span>02 / FOCUS</span></figcaption>
+      </figure>
+    </section>
+
+    <section id="features" class="features wrap" aria-labelledby="feature-title">
+      <div class="feature-heading">
+        <p class="eyebrow">INSIDE QUIETLANE</p>
+        <h2 id="feature-title">Make room for<br>what you came for.</h2>
+        <p>Use Quietlane’s built-in browser to choose which parts of social sites you want to see.</p>
+      </div>
+      <ol class="feature-list">
+        <li><span class="index">01</span><div><h3>Keep the conversation</h3><p>On Instagram, block Reels, Explore, and the home feed while keeping messages available. Open a single reel shared in a message without unlocking the scrolling feed.</p></div></li>
+        <li><span class="index">02</span><div><h3>Make time to focus</h3><p>Start a focus session to pause social browsing in Quietlane, or set daily time limits for the sites you use.</p></div></li>
+        <li><span class="index">03</span><div><h3>Wind down on schedule</h3><p>Choose your sleep hours and days. Quietlane pauses in-app social browsing during that window.</p></div></li>
+      </ol>
+    </section>
+
+    <section id="download" class="download" aria-labelledby="download-title">
+      <div class="wrap download-grid">
+        <div>
+          <p class="eyebrow">GET QUIETLANE</p>
+          <h2 id="download-title">Start with<br>the source.</h2>
+          <p>Download the MIT-licensed project and run it on iOS or Android with Expo Go.</p>
+          <a class="button mint" href="https://github.com/darkaimzzz/quietlane/archive/refs/heads/main.zip">Download source ZIP <span aria-hidden="true">↓</span></a>
+          <p class="fine">Installable app binaries are not available yet.</p>
+        </div>
+        <div class="setup">
+          <h3>Run it on your phone</h3>
+          <ol>
+            <li>Install Node.js 22.18 or newer and an Expo Go version compatible with Expo SDK 58.</li>
+            <li>Unzip the download, open a terminal in the extracted project folder, and run:</li>
+          </ol>
+          <pre tabindex="0" aria-label="Quietlane setup commands"><code>cd mobile
+npm ci
+npx expo start --go</code></pre>
+          <p>Connect your phone and computer to the same Wi-Fi, then scan the QR code with Expo Go on Android or Camera on iOS.</p>
+          <a class="text-link" href="https://github.com/darkaimzzz/quietlane#run-locally">View setup on GitHub ↗</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer wrap">
+    <a class="wordmark" href="./"><img src="./showcase/brand.svg" width="28" height="28" alt="">Quietlane</a>
+    <p>Open source under the MIT License.</p>
+    <nav aria-label="Footer navigation"><a href="./privacy-policy.html">Privacy</a><a href="./support.html">Support</a><a href="https://github.com/darkaimzzz/quietlane">GitHub ↗</a></nav>
+  </footer>
+</body>
+</html>

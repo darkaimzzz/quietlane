@@ -1,5 +1,7 @@
 # Quietlane
 
+[Visit the showcase and download Quietlane](https://darkaimzzz.github.io/quietlane/).
+
 An open-source, local-first iPhone and Android app for focused social browsing, focus sessions, and sleep routines. **No Quietlane account or login is required.** Social websites may require their own sign-in for private content.
 
 <img src="release/screenshots/home.png" alt="Quietlane home screen" width="260" /> <img src="release/screenshots/focus.png" alt="Quietlane focus timer" width="260" />
